@@ -64,7 +64,6 @@
 
 - (id)initWithManager:(RCTCameraManager*)manager bridge:(RCTBridge *)bridge
 {
-  
   if ((self = [super init])) {
     self.manager = manager;
     self.bridge = bridge;
@@ -84,7 +83,12 @@
 - (void)layoutSubviews
 {
   [super layoutSubviews];
-  self.manager.previewLayer.frame = self.bounds;
+  if (self.manager.cameraWidth && self.manager.cameraHeight) {
+    CGRect bounds = {CGPointZero, {self.manager.cameraWidth, self.manager.cameraHeight}};
+    self.manager.previewLayer.frame = bounds;
+  } else {
+    self.manager.previewLayer.frame = self.bounds;
+  }
   [self setBackgroundColor:[UIColor blackColor]];
   [self.layer insertSublayer:self.manager.previewLayer atIndex:0];
 }
@@ -181,6 +185,7 @@
 
 - (void)changePreviewOrientation:(NSInteger)orientation
 {
+    [self setNeedsLayout];
     dispatch_async(self.manager.sessionQueue, ^{
         if (self.manager.previewLayer.connection.isVideoOrientationSupported) {
             self.manager.previewLayer.connection.videoOrientation = orientation;

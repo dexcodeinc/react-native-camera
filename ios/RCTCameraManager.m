@@ -285,6 +285,20 @@ RCT_CUSTOM_VIEW_PROPERTY(keepAwake, BOOL, RCTCamera) {
   [UIApplication sharedApplication].idleTimerDisabled = enabled;
 }
 
+RCT_CUSTOM_VIEW_PROPERTY(cameraWidth, float, RCTCamera) {
+  float cameraWidth = [RCTConvert float:json];
+  if (cameraWidth) {
+    self.cameraWidth = cameraWidth;
+  }
+}
+
+RCT_CUSTOM_VIEW_PROPERTY(cameraHeight, float, RCTCamera) {
+  float cameraHeight = [RCTConvert float:json];
+  if (cameraHeight) {
+    self.cameraHeight = cameraHeight;
+  }
+}
+
 RCT_CUSTOM_VIEW_PROPERTY(mirrorImage, BOOL, RCTCamera) {
   self.mirrorImage = [RCTConvert BOOL:json];
 }
