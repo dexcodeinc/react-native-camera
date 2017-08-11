@@ -31,14 +31,14 @@
 {
   [self.manager changeOrientation:orientation];
 
-  if (orientation == RCTCameraOrientationAuto) {
-    [self changePreviewOrientation:[UIApplication sharedApplication].statusBarOrientation];
-    [[NSNotificationCenter defaultCenter] addObserver:self  selector:@selector(orientationChanged:)    name:UIDeviceOrientationDidChangeNotification  object:nil];
-  }
-  else {
-    [[NSNotificationCenter defaultCenter]removeObserver:self name:UIDeviceOrientationDidChangeNotification object:nil];
-    [self changePreviewOrientation:orientation];
-  }
+  // if (orientation == RCTCameraOrientationAuto) {
+  //   [self changePreviewOrientation:[UIApplication sharedApplication].statusBarOrientation];
+  //   [[NSNotificationCenter defaultCenter] addObserver:self  selector:@selector(orientationChanged:)    name:UIDeviceOrientationDidChangeNotification  object:nil];
+  // }
+  // else {
+  //   [[NSNotificationCenter defaultCenter]removeObserver:self name:UIDeviceOrientationDidChangeNotification object:nil];
+  //   [self changePreviewOrientation:orientation];
+  // }
 }
 
 - (void)setOnFocusChanged:(BOOL)enabled
@@ -91,6 +91,7 @@
   }
   [self setBackgroundColor:[UIColor blackColor]];
   [self.layer insertSublayer:self.manager.previewLayer atIndex:0];
+  [self delayedChangePreviewOrientation:[UIApplication sharedApplication].statusBarOrientation];
 }
 
 - (void)insertReactSubview:(UIView *)view atIndex:(NSInteger)atIndex
@@ -175,22 +176,35 @@
 }
 
 
--(void) handlePinchToZoomRecognizer:(UIPinchGestureRecognizer*)pinchRecognizer {
-    if (!_onZoomChanged) return;
+- (void)handlePinchToZoomRecognizer:(UIPinchGestureRecognizer*)pinchRecognizer
+{
+  if (!_onZoomChanged) return;
 
-    if (pinchRecognizer.state == UIGestureRecognizerStateChanged) {
-        [self.manager zoom:pinchRecognizer.velocity reactTag:self.reactTag];
-    }
+  if (pinchRecognizer.state == UIGestureRecognizerStateChanged) {
+    [self.manager zoom:pinchRecognizer.velocity reactTag:self.reactTag];
+  }
 }
 
 - (void)changePreviewOrientation:(NSInteger)orientation
 {
-    [self setNeedsLayout];
-    dispatch_async(self.manager.sessionQueue, ^{
-        if (self.manager.previewLayer.connection.isVideoOrientationSupported) {
-            self.manager.previewLayer.connection.videoOrientation = orientation;
-        }
+  [self setNeedsLayout];
+  dispatch_async(self.manager.sessionQueue, ^{
+    if (self.manager.previewLayer.connection.isVideoOrientationSupported) {
+      self.manager.previewLayer.connection.videoOrientation = orientation;
+    }
+  });
+}
+
+- (void)delayedChangePreviewOrientation:(NSInteger)orientation
+{
+  if (self.manager.previewLayer.connection.isVideoOrientationSupported) {
+    [self.manager.previewLayer.connection setVideoOrientation:orientation];
+  } else {
+    // Retry in 100 milliseconds
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC / 10), self.manager.sessionQueue, ^{
+      [self delayedChangePreviewOrientation:[UIApplication sharedApplication].statusBarOrientation];
     });
+  }
 }
 
 @end
