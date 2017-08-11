@@ -91,7 +91,7 @@
   }
   [self setBackgroundColor:[UIColor blackColor]];
   [self.layer insertSublayer:self.manager.previewLayer atIndex:0];
-  [self delayedChangePreviewOrientation:[UIApplication sharedApplication].statusBarOrientation];
+  [self delayedChangePreviewOrientation];
 }
 
 - (void)insertReactSubview:(UIView *)view atIndex:(NSInteger)atIndex
@@ -195,14 +195,14 @@
   });
 }
 
-- (void)delayedChangePreviewOrientation:(NSInteger)orientation
+- (void)delayedChangePreviewOrientation
 {
   if (self.manager.previewLayer.connection.isVideoOrientationSupported) {
-    [self.manager.previewLayer.connection setVideoOrientation:orientation];
+    [self.manager.previewLayer.connection setVideoOrientation:[UIApplication sharedApplication].statusBarOrientation];
   } else {
     // Retry in 100 milliseconds
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC / 10), self.manager.sessionQueue, ^{
-      [self delayedChangePreviewOrientation:[UIApplication sharedApplication].statusBarOrientation];
+      [self delayedChangePreviewOrientation];
     });
   }
 }
