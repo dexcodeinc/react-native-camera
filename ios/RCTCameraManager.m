@@ -30,15 +30,21 @@ RCT_EXPORT_MODULE();
 
 - (UIView *)view
 {
-  self.session = [AVCaptureSession new];
+  if (!self.session) {
+    NSLog(@"initialized once");
+    self.session = [AVCaptureSession new];
+    [self initializeCaptureSessionInput:AVMediaTypeVideo];
+    [self startSession];
+  }
+
   #if !(TARGET_IPHONE_SIMULATOR)
+  if (!self.previewLayer) {
     self.previewLayer = [AVCaptureVideoPreviewLayer layerWithSession:self.session];
     self.previewLayer.needsDisplayOnBoundsChange = YES;
+  }
   #endif
 
-  if(!self.camera){
-    self.camera = [[RCTCamera alloc] initWithManager:self bridge:self.bridge];
-  }
+  self.camera = [[RCTCamera alloc] initWithManager:self bridge:self.bridge];
   return self.camera;
 }
 
@@ -185,6 +191,7 @@ RCT_CUSTOM_VIEW_PROPERTY(aspect, NSInteger, RCTCamera) {
 }
 
 RCT_CUSTOM_VIEW_PROPERTY(type, NSInteger, RCTCamera) {
+  NSLog(@"RCT_CUSTOM_VIEW_PROPERTY(type)");
   NSInteger type = [RCTConvert NSInteger:json];
 
   self.presetCamera = type;
@@ -231,7 +238,7 @@ RCT_CUSTOM_VIEW_PROPERTY(type, NSInteger, RCTCamera) {
       [self.session commitConfiguration];
     });
   }
-  [self initializeCaptureSessionInput:AVMediaTypeVideo];
+  // [self initializeCaptureSessionInput:AVMediaTypeVideo];
 }
 
 RCT_CUSTOM_VIEW_PROPERTY(flashMode, NSInteger, RCTCamera) {
@@ -308,6 +315,7 @@ RCT_CUSTOM_VIEW_PROPERTY(barCodeTypes, NSArray, RCTCamera) {
 }
 
 RCT_CUSTOM_VIEW_PROPERTY(captureAudio, BOOL, RCTCamera) {
+  NSLog(@"RCT_CUSTOM_VIEW_PROPERTY(captureAudio)");
   BOOL captureAudio = [RCTConvert BOOL:json];
   if (captureAudio) {
     RCTLog(@"capturing audio");
@@ -432,6 +440,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 }
 
 - (void)startSession {
+  NSLog(@"startSession");
 #if TARGET_IPHONE_SIMULATOR
   return;
 #endif
@@ -477,6 +486,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 }
 
 - (void)stopSession {
+  NSLog(@"stopSession");
 #if TARGET_IPHONE_SIMULATOR
   self.camera = nil;
   return;
@@ -497,6 +507,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 }
 
 - (void)initializeCaptureSessionInput:(NSString *)type {
+  NSLog(@"initializeCaptureSessionInput");
   dispatch_async(self.sessionQueue, ^{
     if (type == AVMediaTypeAudio) {
       for (AVCaptureDeviceInput* input in [self.session inputs]) {
@@ -760,6 +771,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 
 -(void)captureVideo:(NSInteger)target options:(NSDictionary *)options orientation:(AVCaptureVideoOrientation)orientation resolve:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRejectBlock)reject
 {
+  NSLog(@"captureVideo");
   if (self.movieFileOutput.recording) {
     reject(RCTErrorUnspecified, nil, RCTErrorWithMessage(@"Already recording"));
     return;

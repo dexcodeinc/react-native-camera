@@ -69,8 +69,8 @@
     self.bridge = bridge;
     UIPinchGestureRecognizer *pinchGesture = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(handlePinchToZoomRecognizer:)];
     [self addGestureRecognizer:pinchGesture];
-    [self.manager initializeCaptureSessionInput:AVMediaTypeVideo];
-    [self.manager startSession];
+    // [self.manager initializeCaptureSessionInput:AVMediaTypeVideo];
+    // [self.manager startSession];
     _multipleTouches = NO;
     _onFocusChanged = NO;
     _defaultOnFocusComponent = YES;
@@ -90,7 +90,10 @@
     self.manager.previewLayer.frame = self.bounds;
   }
   [self setBackgroundColor:[UIColor blackColor]];
-  [self.layer insertSublayer:self.manager.previewLayer atIndex:0];
+  NSLog(@"sublayers count: %d", [self.layer.sublayers count]);
+  if ([self.layer.sublayers count] == 0) {
+    [self.layer insertSublayer:self.manager.previewLayer atIndex:0];
+  }
   [self delayedChangePreviewOrientation];
 }
 
@@ -108,7 +111,7 @@
 
 - (void)removeFromSuperview
 {
-  [self.manager stopSession];
+  // [self.manager stopSession];
   [super removeFromSuperview];
   [[NSNotificationCenter defaultCenter] removeObserver:self name:UIDeviceOrientationDidChangeNotification object:nil];
   [UIApplication sharedApplication].idleTimerDisabled = _previousIdleTimerDisabled;
@@ -197,13 +200,16 @@
 
 - (void)delayedChangePreviewOrientation
 {
-  if (self.manager.previewLayer.connection.isVideoOrientationSupported) {
-    [self.manager.previewLayer.connection setVideoOrientation:[UIApplication sharedApplication].statusBarOrientation];
-  } else {
-    // Retry in 100 milliseconds
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC / 10), self.manager.sessionQueue, ^{
-      [self delayedChangePreviewOrientation];
-    });
+  if ([self.layer.sublayers count] > 0) {
+    AVCaptureVideoPreviewLayer *previewLayer = (AVCaptureVideoPreviewLayer *)[self.layer.sublayers objectAtIndex:0];
+    if (previewLayer.connection.isVideoOrientationSupported) {
+      [previewLayer.connection setVideoOrientation:[UIApplication sharedApplication].statusBarOrientation];
+    } else {
+      // Retry in 100 milliseconds
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC / 10), self.manager.sessionQueue, ^{
+        [self delayedChangePreviewOrientation];
+      });
+    }
   }
 }
 
