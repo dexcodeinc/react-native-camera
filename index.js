@@ -100,6 +100,7 @@ export default class Camera extends Component {
     barcodeScannerEnabled: PropTypes.bool,
     onFocusChanged: PropTypes.func,
     onZoomChanged: PropTypes.func,
+    onPressCamera: PropTypes.func,
     mirrorImage: PropTypes.bool,
     fixOrientation: PropTypes.bool,
     barCodeTypes: PropTypes.array,
@@ -155,6 +156,7 @@ export default class Camera extends Component {
 
   async componentWillMount() {
     this._addOnBarCodeReadListener()
+    this._addOnPressCameraListener()
 
     let { captureMode } = convertNativeProps({ captureMode: this.props.captureMode })
     let hasVideoAndAudio = this.props.captureAudio && captureMode === Camera.constants.CaptureMode.video
@@ -167,6 +169,7 @@ export default class Camera extends Component {
   }
 
   componentWillUnmount() {
+    this._removeOnPressCameraListener()
     this._removeOnBarCodeReadListener()
 
     if (this.state.isRecording) {
@@ -175,9 +178,12 @@ export default class Camera extends Component {
   }
 
   componentWillReceiveProps(newProps) {
-    const { onBarCodeRead } = this.props
+    const { onBarCodeRead, onPressCamera } = this.props
     if (onBarCodeRead !== newProps.onBarCodeRead) {
       this._addOnBarCodeReadListener(newProps)
+    }
+    if (onPressCamera !== newProps.onPressCamera) {
+      this._addOnPressCameraListener(newProps)
     }
   }
 
@@ -198,6 +204,22 @@ export default class Camera extends Component {
     }
   }
 
+  _addOnPressCameraListener(props) {
+    const { onPressCamera } = props || this.props
+    this._removeOnPressCameraListener()
+    if (onPressCamera) {
+      this.onPressCameraListener = Platform.select({
+        ios: NativeAppEventEmitter.addListener('onPressCamera', this._onPressCamera.bind(this)),
+      })
+    }
+  }
+  _removeOnPressCameraListener() {
+    const listener = this.onPressCameraListener
+    if (listener) {
+      listener.remove()
+    }
+  }
+
   render() {
     const style = [styles.base, this.props.style];
     const nativeProps = convertNativeProps(this.props);
@@ -210,6 +232,12 @@ export default class Camera extends Component {
       this.props.onBarCodeRead(data)
     }
   };
+
+  _onPressCamera(event) {
+    if (this.props.onPressCamera) {
+      this.props.onPressCamera(event)
+    }
+  }
 
   capture(options) {
     const props = convertNativeProps(this.props);
@@ -269,7 +297,7 @@ const RCTCamera = requireNativeComponent('RCTCamera', Camera, {nativeOnly: {
   importantForAccessibility: true,
   accessibilityLiveRegion: true,
   accessibilityComponentType: true,
-  onLayout: true
+  onLayout: true,
 }});
 
 const styles = StyleSheet.create({
